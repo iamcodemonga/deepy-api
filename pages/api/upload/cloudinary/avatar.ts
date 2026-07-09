@@ -1,6 +1,7 @@
 import type { NextApiRequest, NextApiResponse } from "next";
 import formidable from "formidable";
 import cloudinary from "@/src/lib/cloudinary";
+import { getBearerUser } from "@/src/lib/auth";
 import { db } from "@/src/lib/supabase";
 
 export const config = {
@@ -31,19 +32,11 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
   }
 
   try {
-    // 1️⃣ Extract and verify the token (Bearer <access_token>)
-    const authHeader = req.headers.authorization || "";
-    const token = authHeader.replace("Bearer ", "").trim();
-
-    if (!token) {
-      return res.status(401).json({ error: "Missing Authorization token" });
+    const auth = await getBearerUser(req);
+    if (!auth.ok) {
+      return res.status(auth.status).json({ error: auth.error });
     }
-
-    const { data: userData, error: userErr } = await db.auth.getUser(token);
-    if (userErr || !userData?.user) {
-      return res.status(401).json({ error: "Invalid or expired token" });
-    }
-    const userId = userData.user.id;
+    const userId = auth.userId;
 
     // 2️⃣ Parse the multipart form
     const { fields, files } = await parseForm(req);
