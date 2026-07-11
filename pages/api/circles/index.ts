@@ -8,6 +8,7 @@ const LINK_REGEX = /^[a-z0-9_-]+$/;
 type CreateCircleBody = {
   name?: string;
   invite_link?: string;
+  private?: boolean;
   description?: string;
   banner?: string;
   banner_public_id?: string;
@@ -23,7 +24,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     return res.status(auth.status).json({ error: auth.error });
   }
 
-  const { name, invite_link, description, banner, banner_public_id } =
+  const { name, invite_link, private: isPrivate = false, description, banner, banner_public_id } =
     (req.body ?? {}) as CreateCircleBody;
 
   const trimmedName = name?.trim() ?? "";
@@ -63,7 +64,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       name: trimmedName,
       invite_link: normalizedLink,
       creator_id: auth.userId,
-      private: false,
+      private: isPrivate,
     };
 
     const trimmedDescription = description?.trim();
